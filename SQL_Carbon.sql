@@ -1,149 +1,134 @@
--- first, I look over my dataset 
+-- Inspecting the dataset
+SELECT * 
+FROM Carbon_Emission;
+
+-- Checking for null values in the 'CO2_emission_estimates' column
 SELECT * 
 FROM Carbon_Emission
+WHERE CO2_emission_estimates IS NULL;
 
--- then, I check for any columns that may have null values. 
+-- Checking for null values in the 'Year' column
 SELECT * 
 FROM Carbon_Emission
-WHERE CO2_emission_estimates IS NULL
+WHERE Year IS NULL;
 
+-- Checking for null values in the 'Series' column
 SELECT * 
 FROM Carbon_Emission
-WHERE Year IS NULL
+WHERE Series IS NULL;
 
+-- Checking for null values in the 'Value' column
 SELECT * 
 FROM Carbon_Emission
-WHERE Series IS NULL
+WHERE Value IS NULL;
 
-SELECT * 
-FROM Carbon_Emission
-WHERE Value IS NULL
+-- Ensure no null values are present, then examine specific parts of the dataset
 
--- after making sure that there are no nulls in my dataset, I proceed to examine the smaller parts of my dataset
--- including the range of the column "Year", distinct value of the column "Series", the range of the column "Value" 
--- with different conditions. 
-
+-- Retrieve distinct values in the 'Series' column
 SELECT DISTINCT Series
-FROM Carbon_Emission
+FROM Carbon_Emission;
 
+-- Find the range of years in the dataset
 SELECT MIN(Year), MAX(Year)
-FROM Carbon_Emission
+FROM Carbon_Emission;
 
+-- Find the range of values for 'Emissions (thousand metric tons of carbon dioxide)'
 SELECT MIN(Value), MAX(Value)
 FROM Carbon_Emission
-WHERE Series = 'Emissions (thousand metric tons of carbon dioxide)'
+WHERE Series = 'Emissions (thousand metric tons of carbon dioxide)';
 
+-- Find the range of values for 'Emissions per capita (metric tons of carbon dioxide)'
 SELECT MIN(Value), MAX(Value)
 FROM Carbon_Emission
-WHERE Series = 'Emissions per capita (metric tons of carbon dioxide)'
+WHERE Series = 'Emissions per capita (metric tons of carbon dioxide)';
 
--- after checking some smaller parts of my dataset, I find out that the 'Series' column has 2 distinct values.
--- I decide to break these two values into two different tables so that I can work with them easier. 
+-- Separate the two distinct 'Series' values into different tables for easier analysis
 
--- firstly, I creat a new table called 'emissions' for the series 'Emissions (thousand metric tons of carbon dioxide)'
-
+-- Create 'emissions' table for 'Emissions (thousand metric tons of carbon dioxide)'
 CREATE TABLE emissions
 (Country nvarchar(50),
-Year int, 
-Series nvarchar(100), 
-Value float)
+ Year int, 
+ Series nvarchar(100), 
+ Value float);
 
--- I insert values from the 'Carbon_Emission' table where Series = 'Emissions (thousand metric tons of carbon dioxide)'
--- into the 'emissions' table that I just created.
-
+-- Insert values into the 'emissions' table
 INSERT INTO emissions
-SELECT * FROM Carbon_Emission
-WHERE Series = 'Emissions (thousand metric tons of carbon dioxide)'
-
 SELECT * 
-FROM emissions
+FROM Carbon_Emission
+WHERE Series = 'Emissions (thousand metric tons of carbon dioxide)';
 
--- Next, I creat a new table called 'perCapital' for the series Emissions per capita (metric tons of carbon dioxide) --- 
+-- Verify the 'emissions' table
+SELECT * 
+FROM emissions;
 
+-- Create 'perCapital' table for 'Emissions per capita (metric tons of carbon dioxide)'
 CREATE TABLE perCapital
 (Country nvarchar(50),
-Year int, 
-Series nvarchar(100), 
-Value float)
+ Year int, 
+ Series nvarchar(100), 
+ Value float);
 
--- I insert values from the 'Carbon_Emission' table where Series = 'Emissions per capita (metric tons of carbon dioxide)'
--- into the 'perCapital' table that I just create
-
+-- Insert values into the 'perCapital' table
 INSERT INTO perCapital
-SELECT * FROM Carbon_Emission
-WHERE Series = 'Emissions per capita (metric tons of carbon dioxide)'
-
---Now, I'm going to explore the perCapital table first 
-
 SELECT * 
+FROM Carbon_Emission
+WHERE Series = 'Emissions per capita (metric tons of carbon dioxide)';
+
+-- Verify the 'perCapital' table
+SELECT * 
+FROM perCapital;
+
+-- Find min and max values of carbon emissions per capita in India
+SELECT MIN(Value) AS min_value, MAX(Value) AS max_value 
 FROM perCapital
+WHERE Country = 'India';
 
--- I want to find the min and max value of Carbon Emissions per capital in India 
-
-SELECT MIN(Value) as min_value, MAX(Value) as Max_value 
-FROM perCapital
-WHERE Country = 'India'
---- The min value is 14.606 and the max value is 20.168
-
+-- Find the years corresponding to the min and max values in India
 SELECT Year
 FROM perCapital
 WHERE Country = 'India'
-AND Value IN (1.614, 0.35)
---- the year for the max value is 2017 and the year for the min value is 1975. 
+AND Value IN (1.614, 0.35);
 
--- next, I wanted to know the changes of emissions per capital in 2017 compared to the changes of emissions per capital in 1975 --- 
-;WITH value1975 AS 
-(SELECT Country, Value as old_value
-FROM perCapital
-WHERE Year = 1975), 
+-- Compare changes in emissions per capita between 1975 and 2017
+WITH value1975 AS 
+(SELECT Country, Value AS old_value
+ FROM perCapital
+ WHERE Year = 1975), 
 value2017 AS 
-(SELECT Country, Value as new_value 
-FROM perCapital
-WHERE Year = 2017)
+(SELECT Country, Value AS new_value 
+ FROM perCapital
+ WHERE Year = 2017)
 
-SELECT DISTINCT perCapital.Country, ROUND((value2017.new_value - value1975.old_value)/value1975.old_value,2) AS changes 
-FROM 
-value1975
+SELECT DISTINCT perCapital.Country, 
+       ROUND((value2017.new_value - value1975.old_value)/value1975.old_value, 2) AS changes 
+FROM value1975
 INNER JOIN value2017 ON value1975.Country = value2017.Country
 INNER JOIN perCapital ON value1975.Country = perCapital.Country
-ORDER BY changes DESC
- 
----- Oman is the country that has the highest rate of increasing, which is 16.25. 
---- Dem. People's Rep. Korea has the lowest rate of decreasing, which is -0.84
+ORDER BY changes DESC;
 
+-- Oman has the highest rate of increase (16.25), and Dem. People's Rep. Korea has the lowest rate of decrease (-0.84)
 
--- now, I'm going to with the emissions table
+-- Explore the 'emissions' table
 
+-- Verify the 'emissions' table
+SELECT * 
+FROM emissions;
+
+-- Find the min and max values for India
+SELECT MAX(Value), MIN(Value)
+FROM emissions
+WHERE Country = 'India';
+
+-- Find the years corresponding to the min and max values in India
 SELECT * 
 FROM emissions
+WHERE Value = 2161567.072 OR Value = 217193.593;
 
--- I want want to know the min and max value of India -- 
-
-SELECT * 
-FROM emissions
-WHERE Country = 'India'
-
-SELECT MAX(Value), Min(Value)
-FROM emissions
-WHERE Country = 'India'
-
-SELECT * 
-FROM emissions
-WHERE Value = 2161567.072 -- 2017
-OR Value = 217193.593 -- 1975
-
--- finally, I want to find out which 5 countries have the highest amount of carbon emissions. 
-
-SELECT TOP 5 Country, Sum(Value) as sum_value
+-- Identify the top 5 countries with the highest carbon emissions
+SELECT TOP 5 Country, SUM(Value) AS sum_value
 FROM emissions
 GROUP BY Country
-ORDER BY sum_value DESC --China, USA, India, Russia, and Japan. 
+ORDER BY sum_value DESC;
 
-
-
-
-
-
-
-
-
+-- China, USA, India, Russia, and Japan have the highest carbon emissions
+```
